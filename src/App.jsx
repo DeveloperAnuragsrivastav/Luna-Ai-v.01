@@ -9,7 +9,7 @@ export default function App() {
   const [attachedFile, setAttachedFile] = useState(null);
   const [messageCount, setMessageCount] = useState(0);
   const [hasAccess, setHasAccess] = useState(false);
-  const [mode, setMode] = useState("chat"); // chat, email
+  const [mode, setMode] = useState("chat"); // chat | email
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const streamingIntervalRef = useRef(null);
@@ -33,7 +33,7 @@ export default function App() {
     }
   }, [input]);
 
-  // Streaming effect for assistant
+  // ✅ Streaming effect
   const simulateStreaming = (text) => {
     setStreamingText("");
     let index = 0;
@@ -64,10 +64,11 @@ export default function App() {
     }
   };
 
+  // ✅ Handle Send
   const sendMessage = async () => {
     if (!input.trim() && !attachedFile) return;
 
-    // Access/email flow
+    // 🔒 Access/email flow
     if (!hasAccess && messageCount >= 1) {
       if (input.trim() === ACCESS_KEY) {
         setHasAccess(true);
@@ -82,7 +83,7 @@ export default function App() {
           {
             role: "assistant",
             content:
-              "🚫 You’ve reached the free limit! Please drop your email 💌 to get access or enter your key 🔑.",
+              "🚫 Free limit reached! Please enter your access key 🔑 or share your email 💌 to continue.",
           },
         ]);
         setMode("email");
@@ -117,7 +118,7 @@ export default function App() {
       return;
     }
 
-    // Normal chat message
+    // Normal chat
     const userMessage = {
       role: "user",
       content: input + (attachedFile ? ` [File: ${attachedFile.name}]` : ""),
@@ -138,11 +139,22 @@ export default function App() {
       });
 
       const data = await response.json();
-      simulateStreaming(data.message);
-      setMessageCount((prev) => prev + 1);
+      simulateStreaming(data.message || "✅ Got your message!");
     } catch (err) {
       console.error(err);
-      simulateStreaming("Error: Could not reach server.");
+
+      // ✅ Fallback if server down
+      const dummyReplies = [
+        "🤖 (Offline mode) Hey! Server is sleeping but I’m still here ✨",
+        "⚡ No server? No problem. Let’s keep talking 😎",
+        "💡 Offline mode reply: I can still respond to you!",
+      ];
+      const randomReply =
+        dummyReplies[Math.floor(Math.random() * dummyReplies.length)];
+
+      simulateStreaming(randomReply);
+    } finally {
+      setMessageCount((prev) => prev + 1);
     }
   };
 
@@ -157,7 +169,7 @@ export default function App() {
       <header className="border-b border-gray-800 bg-[#202222] flex-shrink-0 w-full">
         <div className="px-4 py-3 flex items-center gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-400 rounded-lg flex items-center justify-center flex-shrink-0">
-            <img src="vite.png" alt="" />
+            <img src="vite.png" alt="logo" />
           </div>
           <span className="text-white font-medium">Luna AI</span>
         </div>
@@ -319,5 +331,3 @@ export default function App() {
     </div>
   );
 }
-
-
